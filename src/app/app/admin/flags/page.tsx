@@ -17,7 +17,7 @@ export default function AdminFlags() {
       <PageTitle
         kicker="Admin"
         title="Runtime flags"
-        body="Live Stripe and public individual contributions stay off for this mock."
+        body="Live Stripe and public individual contributions stay off. These flags are frontend mock values."
       />
       <dl className="max-w-lg divide-y divide-line border border-line">
         {flags

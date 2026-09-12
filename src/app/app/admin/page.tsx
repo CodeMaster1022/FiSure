@@ -19,7 +19,11 @@ export default function AdminHome() {
 
   return (
     <div>
-      <PageTitle kicker="Admin" title="Overview" body="Mock closed-pilot book on SQLite." />
+      <PageTitle
+        kicker="Admin"
+        title="Overview"
+        body="Mock closed-pilot book stored in this browser. The Express API is not connected."
+      />
       {data ? (
         <>
           <div className="grid gap-px bg-line sm:grid-cols-4">

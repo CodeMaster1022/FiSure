@@ -41,7 +41,7 @@ export default function CarrierPolicies() {
   async function bind(id: string) {
     try {
       const data = await api<{ policyNumber: string }>(`/listings/${id}/bind`, { method: "POST" });
-      setMessage(`Bound ${data.policyNumber}. Remittance instruction written to disk.`);
+      setMessage(`Bound ${data.policyNumber}. Simulated remittance instruction recorded.`);
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bind failed");

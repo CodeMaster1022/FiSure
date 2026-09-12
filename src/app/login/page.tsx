@@ -35,8 +35,9 @@ export default function LoginPage() {
       <p className="text-[11px] uppercase tracking-[0.22em] text-sand">Closed pilot</p>
       <h1 className="mt-3 font-serif text-4xl tracking-tight">Sign in</h1>
       <p className="mt-3 text-sm leading-6 text-muted">
-        Mock accounts use password <code className="text-foreground">pilot-pass-2026</code>.
-        FiSure does not underwrite or hold risk.
+        Frontend-only mock — no backend required. Password{" "}
+        <code className="text-foreground">pilot-pass-2026</code>. FiSure does not
+        underwrite or hold risk.
       </p>
       <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-4">
         <label className="flex flex-col gap-2 text-sm">

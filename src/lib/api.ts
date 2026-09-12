@@ -1,29 +1,10 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL || "/backend";
+import { ApiError, handleMock } from "@/lib/mock/store";
 
-export class ApiError extends Error {
-  status: number;
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-  }
-}
+export { ApiError };
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const headers = new Headers(init?.headers);
-  const isForm = typeof FormData !== "undefined" && init?.body instanceof FormData;
-  if (!isForm && init?.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
-  }
-  const res = await fetch(`${BASE}${path}`, {
-    ...init,
-    headers,
-    credentials: "include",
-  });
-  const data = (await res.json().catch(() => ({}))) as { error?: string } & T;
-  if (!res.ok) {
-    throw new ApiError(res.status, data.error || "Request failed");
-  }
-  return data;
+  await new Promise((resolve) => setTimeout(resolve, 30));
+  return (await handleMock(path, init)) as T;
 }
 
 export function homeForRole(role: string) {
