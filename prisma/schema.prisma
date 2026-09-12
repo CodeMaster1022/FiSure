@@ -1,0 +1,468 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  FUNDER
+  CARRIER
+  ADMIN
+}
+
+enum WaitlistRole {
+  OWNER
+  CORPORATE
+  INDIVIDUAL
+  CARRIER
+  OTHER
+}
+
+enum MembershipRole {
+  ADMIN
+  MEMBER
+}
+
+enum KycStatus {
+  PENDING
+  PASSED
+  FAILED
+}
+
+enum StateCode {
+  FL
+  CA
+}
+
+enum Peril {
+  FL_HURRICANE
+  FL_FLOOD
+  CA_WILDFIRE
+  CA_EARTHQUAKE
+}
+
+enum ListingStatus {
+  DRAFT
+  SUBMITTED
+  ELIGIBILITY_FAILED
+  AWAITING_QUOTE
+  QUOTED
+  AWAITING_OWNER_FUNDS
+  LIVE
+  FULLY_FUNDED
+  AWAITING_LENDER
+  BINDING
+  ACTIVE
+  EXPIRED
+  TOPUP_WINDOW
+  TOPUP_LAPSED
+  DECLINED
+  ARCHIVED
+}
+
+enum QuoteDecision {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum ContributionStatus {
+  PENDING
+  SUCCEEDED
+  REFUNDED
+  FAILED
+}
+
+enum LedgerType {
+  OWNER_PREMIUM
+  FUNDER_PREMIUM
+  REFUND
+  PLATFORM_FEE
+  CARRIER_REMITTANCE
+}
+
+enum TriggerConfirmation {
+  PENDING
+  CONFIRMED
+  NOT_MET
+}
+
+enum PayoutStatus {
+  DRAFT
+  INSTRUCTED
+  PAID
+}
+
+enum PayoutPayee {
+  LENDER
+  OWNER
+  FUNDER
+}
+
+enum DocumentKind {
+  DEED
+  MORTGAGE
+  CONDITION_REPORT
+  FILE_PACK
+  QUOTE
+  POLICY
+  REMITTANCE
+  PAYOUT_INSTRUCTION
+  OTHER
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          Role      @default(OWNER)
+  kycStatus     KycStatus @default(PENDING)
+  stripeIdentitySessionId String?
+  carrierId     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  memberships   Membership[]
+  properties    Property[]
+  contributions Contribution[]
+  disclosures   DisclosureAcceptance[]
+  documents     Document[]             @relation("UploadedDocuments")
+  triggerConfirmations TriggerEventLog[]
+  carrier       Carrier?               @relation(fields: [carrierId], references: [id])
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+model Organization {
+  id               String   @id @default(cuid())
+  name             String
+  approved         Boolean  @default(false)
+  stripeCustomerId String?
+  createdAt        DateTime @default(now())
+
+  memberships   Membership[]
+  contributions Contribution[]
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  userId         String
+  organizationId String
+  role           MembershipRole @default(ADMIN)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+}
+
+model Carrier {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  users    User[]
+  products CarrierProduct[]
+  policies Policy[]
+}
+
+model CarrierProduct {
+  id                 String   @id @default(cuid())
+  carrierId          String
+  name               String
+  peril              Peril
+  states             String
+  triggerDescription String
+  payoutSchedule     Json?
+  active             Boolean  @default(true)
+
+  carrier       Carrier        @relation(fields: [carrierId], references: [id])
+  quoteRequests QuoteRequest[]
+}
+
+model Property {
+  id                  String    @id @default(cuid())
+  ownerId             String
+  address             String
+  city                String
+  county              String
+  state               StateCode
+  zip                 String
+  lat                 Float
+  lng                 Float
+  estimatedValueCents Int
+  peril               Peril
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  owner        User               @relation(fields: [ownerId], references: [id])
+  mortgage     Mortgage?
+  eligibility  EligibilityCheck[]
+  documents    Document[]
+  quoteRequests QuoteRequest[]
+  listings     Listing[]
+}
+
+model Mortgage {
+  id                     String    @id @default(cuid())
+  propertyId             String    @unique
+  lenderName             String
+  servicer               String?
+  outstandingBalanceCents Int
+  lenderEmail            String?
+  notifiedAt             DateTime?
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model EligibilityCheck {
+  id                    String   @id @default(cuid())
+  propertyId            String
+  bufferPassed          Boolean
+  kycPassed             Boolean
+  sameRiskCovered       Boolean
+  inRiskZone            Boolean
+  requiredCoverageCents Int
+  proposedCoverageCents Int?
+  notes                 String?
+  checkedAt             DateTime @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model QuoteRequest {
+  id               String        @id @default(cuid())
+  propertyId       String
+  carrierProductId String
+  status           QuoteDecision @default(PENDING)
+  filePackKey      String?
+  submittedAt      DateTime      @default(now())
+
+  property       Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  carrierProduct CarrierProduct @relation(fields: [carrierProductId], references: [id])
+  quote          Quote?
+}
+
+model Quote {
+  id              String        @id @default(cuid())
+  quoteRequestId  String        @unique
+  decision        QuoteDecision
+  premiumCents    Int?
+  coverageCents   Int?
+  triggerJson     Json?
+  payoutSchedule  Json?
+  validUntil      DateTime?
+  notes           String?
+  createdAt       DateTime      @default(now())
+
+  quoteRequest QuoteRequest @relation(fields: [quoteRequestId], references: [id], onDelete: Cascade)
+  listing      Listing?
+}
+
+model Listing {
+  id                     String        @id @default(cuid())
+  propertyId             String
+  quoteId                String        @unique
+  status                 ListingStatus @default(AWAITING_OWNER_FUNDS)
+  premiumTargetCents     Int
+  fundedCents            Int           @default(0)
+  ownerContributionCents Int           @default(0)
+  ownerRequestedDays     Int           @default(45)
+  liveAt                 DateTime?
+  expiresAt              DateTime?
+  topUpEndsAt            DateTime?
+  lenderNamedLossPayee   Boolean       @default(false)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+
+  property      Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  quote         Quote          @relation(fields: [quoteId], references: [id])
+  contributions Contribution[]
+  ledger        EscrowLedger[]
+  documents     Document[]
+  policy        Policy?
+  disclosures   DisclosureAcceptance[]
+}
+
+model Contribution {
+  id                    String              @id @default(cuid())
+  listingId             String
+  userId                String
+  organizationId        String?
+  amountCents           Int
+  status                ContributionStatus  @default(PENDING)
+  stripePaymentIntentId String?             @unique
+  createdAt             DateTime            @default(now())
+
+  listing      Listing       @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id])
+  organization Organization? @relation(fields: [organizationId], references: [id])
+}
+
+model EscrowLedger {
+  id                    String     @id @default(cuid())
+  listingId             String
+  type                  LedgerType
+  amountCents           Int
+  stripePaymentIntentId String?
+  partyUserId           String?
+  note                  String?
+  createdAt             DateTime   @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model DisclosureAcceptance {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String?
+  version   String
+  acceptedAt DateTime @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing? @relation(fields: [listingId], references: [id])
+
+  @@index([userId, version])
+}
+
+model Policy {
+  id                   String    @id @default(cuid())
+  listingId            String    @unique
+  carrierId            String
+  policyNumber         String
+  boundAt              DateTime  @default(now())
+  lenderNamedLossPayee Boolean   @default(false)
+  active               Boolean   @default(true)
+
+  listing Listing @relation(fields: [listingId], references: [id])
+  carrier Carrier @relation(fields: [carrierId], references: [id])
+  watch   TriggerWatch?
+  events  TriggerEventLog[]
+  payouts Payout[]
+  documents Document[]
+}
+
+model TriggerWatch {
+  id       String @id @default(cuid())
+  policyId String @unique
+  peril    Peril
+  lat      Float
+  lng      Float
+  radiusKm Float
+  active   Boolean @default(true)
+
+  policy Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+}
+
+model TriggerEventLog {
+  id             String              @id @default(cuid())
+  policyId       String
+  source         String
+  payload        Json
+  matched        Boolean
+  confirmation   TriggerConfirmation @default(PENDING)
+  notes          String?
+  evaluatedAt    DateTime            @default(now())
+  confirmedById  String?
+  confirmedAt    DateTime?
+
+  policy      Policy @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  confirmedBy User?  @relation(fields: [confirmedById], references: [id])
+}
+
+model Payout {
+  id                     String       @id @default(cuid())
+  policyId               String
+  grossCents             Int
+  mortgageCents          Int
+  ownerCents             Int
+  funderPoolCents        Int
+  ownerContributionBps   Int
+  status                 PayoutStatus @default(DRAFT)
+  instructionKey         String?
+  createdAt              DateTime     @default(now())
+
+  policy Policy       @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  lines  PayoutLine[]
+}
+
+model PayoutLine {
+  id         String      @id @default(cuid())
+  payoutId   String
+  payee      PayoutPayee
+  amountCents Int
+  userId     String?
+  note       String?
+
+  payout Payout @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+}
+
+model Document {
+  id           String       @id @default(cuid())
+  kind         DocumentKind
+  filename     String
+  storageKey   String
+  mimeType     String
+  propertyId   String?
+  listingId    String?
+  policyId     String?
+  uploadedById String?
+  createdAt    DateTime     @default(now())
+
+  property   Property? @relation(fields: [propertyId], references: [id])
+  listing    Listing?  @relation(fields: [listingId], references: [id])
+  policy     Policy?   @relation(fields: [policyId], references: [id])
+  uploadedBy User?     @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+}
+
+model WaitlistSignup {
+  id                  String       @id @default(cuid())
+  name                String
+  email               String
+  role                WaitlistRole
+  disclosureAccepted  Boolean
+  createdAt           DateTime     @default(now())
+
+  @@unique([email, role])
+}
