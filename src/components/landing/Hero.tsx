@@ -10,13 +10,13 @@ export function Hero() {
             Florida and California · Closed pilot
           </p>
           <h1 className="mt-5 max-w-xl font-serif text-[2.75rem] leading-[1.08] tracking-tight sm:text-6xl">
-            Coverage the premium made unreachable.
+            The coverage exists. The premium is what&apos;s out of reach.
           </h1>
           <p className="mt-6 max-w-lg text-base leading-7 text-muted sm:text-lg">
             FiSure is a marketplace, not an insurer. Property owners list.
-            Carriers underwrite parametric products. Companies and neighbors
-            help fund the remaining premium. If a public trigger hits, proceeds
-            follow a published waterfall — lender first.
+            Carriers underwrite the parametric policy. Companies and neighbors
+            fund the rest of the premium. Building stronger, more resilient
+            communities together.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a

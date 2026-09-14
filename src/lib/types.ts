@@ -56,3 +56,14 @@ export type Listing = {
   }>;
   policy?: { id: string; policyNumber: string } | null;
 };
+
+export type Notification = {
+  id: string;
+  kind: "TRIGGER_MATCH" | "CLAIM_OPENED" | "CLAIM_SETTLED" | "KYC_FAILED";
+  title: string;
+  body: string;
+  listingId: string | null;
+  policyId: string | null;
+  read: boolean;
+  createdAt: string;
+};

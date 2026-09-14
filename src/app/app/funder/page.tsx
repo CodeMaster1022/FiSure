@@ -1,31 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import { usd } from "@/lib/money";
-import { PERIL_LABEL } from "@/lib/labels";
+import { PERIL_LABEL, STATUS_LABEL } from "@/lib/labels";
 import { PageTitle, StatusBadge } from "@/components/app/ui";
+import { ListingMap } from "@/components/app/ListingMap";
 import type { Listing } from "@/lib/types";
 
-function project(lat: number, lng: number) {
-  const left = ((lng - -125) / 59) * 100;
-  const top = ((50 - lat) / 26) * 100;
-  return {
-    left: `${Math.min(96, Math.max(4, left))}%`,
-    top: `${Math.min(92, Math.max(8, top))}%`,
-  };
-}
+const ALL = "ALL";
 
 export default function FunderMap() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [state, setState] = useState(ALL);
+  const [peril, setPeril] = useState(ALL);
+  const [status, setStatus] = useState(ALL);
 
   useEffect(() => {
     api<{ listings: Listing[] }>("/listings/map")
       .then((data) => setListings(data.listings))
       .catch((err: Error) => setError(err.message));
   }, []);
+
+  const statusesPresent = useMemo(
+    () => Array.from(new Set(listings.map((listing) => listing.status))).sort(),
+    [listings],
+  );
+  const perilsPresent = useMemo(
+    () => Array.from(new Set(listings.map((listing) => listing.property.peril))).sort(),
+    [listings],
+  );
+
+  const filtered = useMemo(
+    () =>
+      listings.filter(
+        (listing) =>
+          (state === ALL || listing.property.state === state) &&
+          (peril === ALL || listing.property.peril === peril) &&
+          (status === ALL || listing.status === status),
+      ),
+    [listings, state, peril, status],
+  );
 
   return (
     <div>
@@ -35,22 +52,52 @@ export default function FunderMap() {
         body="A contribution is not a deposit. If no qualifying trigger occurs, the premium is consumed by the carrier."
       />
       {error ? <p className="mb-4 text-sm text-sand">{error}</p> : null}
-      <div className="relative mb-10 h-[320px] border border-line bg-surface">
-        {listings.map((listing) => (
-          <Link
-            key={listing.id}
-            href={`/app/funder/listings/${listing.id}`}
-            className="absolute h-2.5 w-2.5 rounded-full bg-sand"
-            style={project(listing.property.lat, listing.property.lng)}
-            title={`${listing.property.city} ${listing.status}`}
-          />
-        ))}
-        <p className="absolute bottom-3 left-4 text-[11px] uppercase tracking-[0.16em] text-muted">
-          FL and CA markers · not a risk overlay
-        </p>
+
+      <div className="mb-4 flex flex-wrap gap-3 text-sm">
+        <select
+          value={state}
+          onChange={(e) => setState(e.target.value)}
+          className="border border-line bg-background px-3 py-2"
+        >
+          <option value={ALL}>All states</option>
+          <option value="FL">Florida</option>
+          <option value="CA">California</option>
+        </select>
+        <select
+          value={peril}
+          onChange={(e) => setPeril(e.target.value)}
+          className="border border-line bg-background px-3 py-2"
+        >
+          <option value={ALL}>All disaster types</option>
+          {perilsPresent.map((p) => (
+            <option key={p} value={p}>
+              {PERIL_LABEL[p] ?? p}
+            </option>
+          ))}
+        </select>
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          className="border border-line bg-background px-3 py-2"
+        >
+          <option value={ALL}>All funding status</option>
+          {statusesPresent.map((s) => (
+            <option key={s} value={s}>
+              {STATUS_LABEL[s] ?? s}
+            </option>
+          ))}
+        </select>
       </div>
+
+      <div className="mb-3">
+        <ListingMap listings={filtered} />
+      </div>
+      <p className="mb-10 text-[11px] uppercase tracking-[0.16em] text-muted">
+        Click a marker for details &middot; not a FEMA/NOAA/USGS risk overlay yet
+      </p>
+
       <div className="grid gap-px bg-line">
-        {listings.map((listing) => (
+        {filtered.map((listing) => (
           <Link
             key={listing.id}
             href={`/app/funder/listings/${listing.id}`}
