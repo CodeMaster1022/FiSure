@@ -24,12 +24,14 @@ const nav: Record<Role, Array<{ href: string; label: string }>> = {
     { href: "/app/carrier/products", label: "Products" },
     { href: "/app/carrier/policies", label: "Policies" },
     { href: "/app/carrier/triggers", label: "Triggers" },
+    { href: "/app/claims", label: "Claims" },
   ],
   ADMIN: [
     { href: "/app/admin", label: "Overview" },
     { href: "/app/admin/waitlist", label: "Waitlist" },
     { href: "/app/admin/listings", label: "Listings" },
     { href: "/app/admin/waterfall", label: "Waterfall" },
+    { href: "/app/claims", label: "Claims" },
     { href: "/app/admin/flags", label: "Flags" },
   ],
 };

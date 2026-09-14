@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, homeForRole } from "@/lib/api";
 import type { SessionUser } from "@/lib/types";
@@ -32,7 +33,10 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto flex min-h-full max-w-md flex-col justify-center px-6 py-16">
-      <p className="text-[11px] uppercase tracking-[0.22em] text-sand">Closed pilot</p>
+      <Link href="/" className="text-sm text-muted hover:text-foreground">
+        ← Back to home
+      </Link>
+      <p className="mt-8 text-[11px] uppercase tracking-[0.22em] text-sand">Closed pilot</p>
       <h1 className="mt-3 font-serif text-4xl tracking-tight">Sign in</h1>
       <p className="mt-3 text-sm leading-6 text-muted">
         Closed pilot — seeded demo accounts only, password{" "}
