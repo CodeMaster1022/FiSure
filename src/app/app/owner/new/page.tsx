@@ -66,7 +66,10 @@ export default function NewPropertyPage() {
         <Field label="Lender email" hint="Used to name the loss payee before bind.">
           <input name="lenderEmail" type="email" className={inputClass()} />
         </Field>
-        <Field label="Servicer">
+        <Field
+          label="Servicer"
+          hint="The company that collects your mortgage payments, if different from the lender above. Optional."
+        >
           <input name="servicer" className={inputClass()} />
         </Field>
         <Field label="Listing window (days)">
@@ -75,9 +78,17 @@ export default function NewPropertyPage() {
         <Field label="Deed (optional)">
           <input name="deed" type="file" className={inputClass()} />
         </Field>
-        <label className="flex gap-3 text-sm text-muted">
-          <input type="checkbox" name="sameRiskCovered" />
-          This peril is already covered at or above the buffer
+        <label className="flex flex-col gap-2 text-sm text-muted">
+          <span className="flex gap-3">
+            <input type="checkbox" name="sameRiskCovered" />
+            I already have insurance for this peril at or above the required
+            coverage
+          </span>
+          <span className="text-xs">
+            Only check this if you already hold adequate coverage — FiSure is
+            for owners who are uninsured or underinsured for this peril.
+            Checking this box will make the property ineligible to list.
+          </span>
         </label>
         {error ? <p className="text-sm text-sand">{error}</p> : null}
         <Button type="submit" disabled={pending}>

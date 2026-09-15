@@ -4,7 +4,7 @@ const legs = [
   {
     share: "74%",
     amount: "$200,000",
-    who: "Mortgage lender",
+    who: "Your mortgage, cleared",
     detail: "First priority. Named loss payee. Settled in full from gross proceeds. Skipped if the property is unencumbered.",
   },
   {
@@ -31,14 +31,25 @@ export function Waterfall() {
         <SectionHeading
           kicker="05 — If a trigger hits"
           title="The order of proceeds is public before anyone contributes."
-          body="Worked example from the FiSure BRD: $270,000 parametric payout on a $200,000 mortgage. The 35% equity buffer is there so that something remains after the lender. It is not a rebuild fund."
+          body="An illustrative example: a $270,000 parametric payout on a property with a $200,000 mortgage. Your lender is paid first, clearing the debt. What remains goes to you, then to the people who helped fund your premium."
         />
+        <p className="mt-3 max-w-xl text-base leading-7 text-muted">
+          Fast cash in weeks after a disaster. It is not a full rebuild
+          settlement, and it does not replace your primary policy.
+        </p>
 
-        <div className="mt-12">
-          <div className="flex h-3 w-full overflow-hidden bg-surface-2">
-            <div className="w-[74%] bg-muted/70" />
-            <div className="w-[5%] bg-teal" />
-            <div className="w-[21%] bg-sand" />
+        <div className="mt-16">
+          <div className="relative">
+            <div className="pointer-events-none absolute inset-x-0 bottom-full mb-2 flex text-[11px] uppercase tracking-[0.14em] text-muted">
+              <span className="w-[74%]">Mortgage lender</span>
+              <span className="w-[5%] whitespace-nowrap">Owner</span>
+              <span className="w-[21%] text-right">Crowdfunders</span>
+            </div>
+            <div className="flex h-3 w-full overflow-hidden bg-surface-2">
+              <div className="w-[74%] bg-muted/70" />
+              <div className="w-[5%] bg-[#a8cec6]" />
+              <div className="w-[21%] bg-[#e4c988]" />
+            </div>
           </div>
           <p className="mt-3 text-xs text-muted">
             Share of gross proceeds · illustrative · $270,000 total
@@ -57,6 +68,12 @@ export function Waterfall() {
             </article>
           ))}
         </div>
+
+        <p className="mt-6 text-sm text-muted">
+          Net position to the owner: <span className="text-sand">$200,000</span> of
+          debt cleared plus <span className="text-sand">$14,000</span> cash in
+          hand.
+        </p>
 
         <div className="mt-8 border border-line bg-surface p-6 sm:p-8">
           <p className="text-[11px] uppercase tracking-[0.2em] text-sand">

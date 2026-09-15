@@ -13,7 +13,7 @@ const nav: Record<Role, Array<{ href: string; label: string }>> = {
     { href: "/app/documents", label: "Documents" },
   ],
   FUNDER: [
-    { href: "/app/funder", label: "Map" },
+    { href: "/app/funder", label: "Dashboard" },
     { href: "/app/funder/portfolio", label: "Community impact" },
     { href: "/app/funder/csr", label: "Corporate CSR" },
     { href: "/app/funder/disclosure", label: "Risk disclosure" },
