@@ -91,6 +91,15 @@ export default function NewPropertyPage() {
             ))}
           </select>
         </Field>
+        <Field
+          label="Property type"
+          hint="Determines which carrier products this property can be matched to."
+        >
+          <select required name="propertyType" className={inputClass()} defaultValue="RESIDENTIAL">
+            <option value="RESIDENTIAL">Residential</option>
+            <option value="COMMERCIAL">Commercial</option>
+          </select>
+        </Field>
         <Field label="Estimated value (USD)">
           <input required name="value" type="number" min={1} className={inputClass()} />
         </Field>

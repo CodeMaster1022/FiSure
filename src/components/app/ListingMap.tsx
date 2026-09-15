@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { LngLatBounds, Marker, MapLibreMap, NavigationControl, Popup } from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
+import mapboxgl, { LngLatBounds, Marker, Map as MapboxMap, NavigationControl, Popup } from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { PERIL_LABEL, STATUS_LABEL } from "@/lib/labels";
 import { usd } from "@/lib/money";
 import type { Listing } from "@/lib/types";
@@ -15,6 +15,7 @@ const STATUS_COLOR: Record<string, string> = {
   TOPUP_WINDOW: "#b0562f",
 };
 const DEFAULT_COLOR = "#8a8f98";
+const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 function escapeHtml(value: string) {
   return value
@@ -26,14 +27,15 @@ function escapeHtml(value: string) {
 
 export function ListingMap({ listings }: { listings: Listing[] }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
+  const mapRef = useRef<MapboxMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    const map = new MapLibreMap({
+    if (!containerRef.current || mapRef.current || !TOKEN) return;
+    mapboxgl.accessToken = TOKEN;
+    const map = new MapboxMap({
       container: containerRef.current,
-      style: "https://demotiles.maplibre.org/style.json",
+      style: "mapbox://styles/mapbox/dark-v11",
       center: [-96, 37.8],
       zoom: 3.2,
     });
@@ -100,6 +102,14 @@ export function ListingMap({ listings }: { listings: Listing[] }) {
       map.once("load", render);
     }
   }, [listings]);
+
+  if (!TOKEN) {
+    return (
+      <div className="flex h-[380px] w-full items-center justify-center border border-line text-sm text-muted">
+        Map unavailable — Mapbox token is not configured.
+      </div>
+    );
+  }
 
   return <div ref={containerRef} className="h-[380px] w-full border border-line" />;
 }

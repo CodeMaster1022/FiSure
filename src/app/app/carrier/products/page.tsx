@@ -10,6 +10,7 @@ type Product = {
   id: string;
   name: string;
   peril: string;
+  propertyType: "RESIDENTIAL" | "COMMERCIAL";
   states: string;
   triggerDescription: string;
   payoutSchedule: unknown;
@@ -43,6 +44,7 @@ export default function CarrierProductsPage() {
         body: JSON.stringify({
           name: form.get("name"),
           peril: form.get("peril"),
+          propertyType: form.get("propertyType"),
           states: form.get("states"),
           triggerDescription: form.get("triggerDescription"),
           payoutSchedule: form.get("payoutSchedule"),
@@ -95,6 +97,12 @@ export default function CarrierProductsPage() {
                 <option value="CA_EARTHQUAKE">California earthquake</option>
               </select>
             </Field>
+            <Field label="Property type">
+              <select name="propertyType" className={inputClass()} defaultValue="RESIDENTIAL">
+                <option value="RESIDENTIAL">Residential</option>
+                <option value="COMMERCIAL">Commercial</option>
+              </select>
+            </Field>
             <Field label="States" hint="e.g. FL or CA">
               <input name="states" required className={inputClass()} />
             </Field>
@@ -118,7 +126,8 @@ export default function CarrierProductsPage() {
             <div>
               <p className="font-serif text-xl">{product.name}</p>
               <p className="mt-1 text-sm text-muted">
-                {PERIL_LABEL[product.peril] ?? product.peril} · {product.states}
+                {PERIL_LABEL[product.peril] ?? product.peril} · {product.states} ·{" "}
+                {product.propertyType === "COMMERCIAL" ? "Commercial" : "Residential"}
               </p>
               <p className="mt-1 text-sm text-muted">{product.triggerDescription}</p>
             </div>

@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { usd } from "@/lib/money";
+import { usd, suggestedMinimumCoverageCents } from "@/lib/money";
 import { PERIL_LABEL } from "@/lib/labels";
 import { PageTitle, StatusBadge } from "@/components/app/ui";
 import { Button, Field, inputClass } from "@/components/ui/forms";
@@ -19,7 +19,7 @@ type Request = {
     mortgage: { outstandingBalanceCents: number; lenderName: string } | null;
     owner: { email: string; name: string | null };
   };
-  carrierProduct: { name: string; triggerDescription: string };
+  carrierProduct: { name: string; triggerDescription: string; payoutSchedule: unknown };
   quote: { decision: string } | null;
 };
 
@@ -105,7 +105,19 @@ export default function CarrierQueue() {
                     <Field label="Premium (USD)">
                       <input name="premium" type="number" className={inputClass()} />
                     </Field>
-                    <Field label="Coverage (USD)">
+                    <Field
+                      label="Coverage (USD)"
+                      hint={(() => {
+                        const suggestion = suggestedMinimumCoverageCents(
+                          request.property.mortgage?.outstandingBalanceCents ?? 0,
+                          request.carrierProduct.payoutSchedule,
+                        );
+                        if (!suggestion.achievable) {
+                          return "This product's payout schedule cannot clear the required 35% buffer at any coverage amount — a fixed-dollar band is set below the required minimum.";
+                        }
+                        return `Enter at least ${usd(suggestion.coverageCents)} to clear the 35% buffer after this product's payout schedule is applied — the raw 135%-of-mortgage figure isn't enough unless every band pays 100%.`;
+                      })()}
+                    >
                       <input name="coverage" type="number" className={inputClass()} />
                     </Field>
                     <Field label="Quote valid (days)">

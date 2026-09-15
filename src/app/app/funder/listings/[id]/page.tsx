@@ -1,9 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/lib/api";
-import { usd } from "@/lib/money";
+import { usd, estimatedContributorPayout } from "@/lib/money";
 import { PERIL_LABEL } from "@/lib/labels";
 import { PageTitle, StatusBadge } from "@/components/app/ui";
 import { Button, Field, inputClass } from "@/components/ui/forms";
@@ -14,6 +14,8 @@ export default function FunderListingPage() {
   const [listing, setListing] = useState<Listing | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [amount, setAmount] = useState<string>("");
+  const defaultAmountSet = useRef(false);
 
   async function load() {
     const data = await api<{ listing: Listing }>(`/listings/${params.id}`);
@@ -26,13 +28,19 @@ export default function FunderListingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id]);
 
+  useEffect(() => {
+    if (!listing || defaultAmountSet.current) return;
+    defaultAmountSet.current = true;
+    const remaining = Math.max((listing.premiumTargetCents - listing.fundedCents) / 100, 0);
+    setAmount(String(Math.min(500, remaining)));
+  }, [listing]);
+
   async function contribute(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
     try {
       await api(`/listings/${params.id}/contribute`, {
         method: "POST",
-        body: JSON.stringify({ amount: Number(form.get("amount")), asOwner: false }),
+        body: JSON.stringify({ amount: Number(amount), asOwner: false }),
       });
       setMessage("Simulated contribution recorded. This is not an investment.");
       await load();
@@ -46,6 +54,18 @@ export default function FunderListingPage() {
   const trigger =
     listing.quote.triggerJson?.text ??
     listing.quote.quoteRequest?.carrierProduct?.triggerDescription;
+  const coverageCents = listing.quote.coverageCents;
+  const amountCents = Math.round((Number(amount) || 0) * 100);
+  const preview =
+    coverageCents && amountCents > 0
+      ? estimatedContributorPayout({
+          contributionCents: amountCents,
+          premiumTargetCents: listing.premiumTargetCents,
+          ownerContributionCents: listing.ownerContributionCents,
+          coverageCents,
+          mortgageCents: listing.property.mortgage?.outstandingBalanceCents ?? 0,
+        })
+      : null;
 
   return (
     <div>
@@ -81,10 +101,21 @@ export default function FunderListingPage() {
               type="number"
               min={1}
               max={remaining}
-              defaultValue={Math.min(500, remaining)}
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
               className={inputClass()}
             />
           </Field>
+          {preview ? (
+            <p className="mt-3 text-sm text-muted">
+              That&apos;s <strong className="text-foreground">{preview.sharePct.toFixed(1)}%</strong>{" "}
+              of the total premium. If the trigger fires and the policy pays its full{" "}
+              {usd(coverageCents ?? 0)} coverage, your estimated payout would be about{" "}
+              <strong className="text-foreground">{usd(preview.estimatedPayoutCents)}</strong>.
+              This is an estimate, not a guarantee — actual payouts depend on the real claim size
+              and the final mix of contributors once the listing is fully funded.
+            </p>
+          ) : null}
           <div className="mt-4">
             <Button type="submit">Support this coverage</Button>
           </div>

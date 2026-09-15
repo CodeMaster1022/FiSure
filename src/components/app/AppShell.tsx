@@ -11,6 +11,7 @@ const nav: Record<Role, Array<{ href: string; label: string }>> = {
     { href: "/app/owner", label: "Dashboard" },
     { href: "/app/owner/new", label: "List a property" },
     { href: "/app/documents", label: "Documents" },
+    { href: "/app/notifications", label: "Notifications" },
   ],
   FUNDER: [
     { href: "/app/funder", label: "Dashboard" },
@@ -18,6 +19,7 @@ const nav: Record<Role, Array<{ href: string; label: string }>> = {
     { href: "/app/funder/csr", label: "Corporate CSR" },
     { href: "/app/funder/disclosure", label: "Risk disclosure" },
     { href: "/app/documents", label: "Documents" },
+    { href: "/app/notifications", label: "Notifications" },
   ],
   CARRIER: [
     { href: "/app/carrier", label: "Queue" },
@@ -25,14 +27,17 @@ const nav: Record<Role, Array<{ href: string; label: string }>> = {
     { href: "/app/carrier/policies", label: "Policies" },
     { href: "/app/carrier/triggers", label: "Triggers" },
     { href: "/app/claims", label: "Claims" },
+    { href: "/app/notifications", label: "Notifications" },
   ],
   ADMIN: [
     { href: "/app/admin", label: "Overview" },
     { href: "/app/admin/waitlist", label: "Waitlist" },
     { href: "/app/admin/listings", label: "Listings" },
     { href: "/app/admin/waterfall", label: "Waterfall" },
+    { href: "/app/admin/commissions", label: "Commissions" },
     { href: "/app/claims", label: "Claims" },
     { href: "/app/admin/flags", label: "Flags" },
+    { href: "/app/notifications", label: "Notifications" },
   ],
 };
 
@@ -75,19 +80,16 @@ export function AppShell({
                   className="text-sm text-muted hover:text-foreground"
                 >
                   {item.label}
+                  {item.href === "/app/notifications" && unreadCount > 0 ? (
+                    <span className="ml-1 rounded-full bg-sand px-1.5 py-0.5 text-[10px] text-background">
+                      {unreadCount}
+                    </span>
+                  ) : null}
                 </Link>
               ))}
             </nav>
           </div>
           <div className="flex items-center gap-4 text-sm text-muted">
-            <Link href="/app/notifications" className="relative hover:text-foreground">
-              Notifications
-              {unreadCount > 0 ? (
-                <span className="ml-1 rounded-full bg-sand px-1.5 py-0.5 text-[10px] text-background">
-                  {unreadCount}
-                </span>
-              ) : null}
-            </Link>
             <span className="hidden sm:inline">{email}</span>
             <span className="text-[11px] uppercase tracking-[0.16em] text-sand">
               {role.toLowerCase()}
@@ -103,6 +105,11 @@ export function AppShell({
           {nav[role].map((item) => (
             <Link key={item.href} href={item.href} className="whitespace-nowrap text-sm text-muted">
               {item.label}
+              {item.href === "/app/notifications" && unreadCount > 0 ? (
+                <span className="ml-1 rounded-full bg-sand px-1.5 py-0.5 text-[10px] text-background">
+                  {unreadCount}
+                </span>
+              ) : null}
             </Link>
           ))}
         </nav>

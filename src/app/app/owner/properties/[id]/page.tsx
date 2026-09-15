@@ -16,6 +16,7 @@ type Detail = {
     state: string;
     zip: string;
     peril: string;
+    propertyType: "RESIDENTIAL" | "COMMERCIAL";
     estimatedValueCents: number;
     mortgage: { lenderName: string; outstandingBalanceCents: number } | null;
     eligibility: Array<{
@@ -41,6 +42,7 @@ type Product = {
   id: string;
   name: string;
   triggerDescription: string;
+  propertyType: "RESIDENTIAL" | "COMMERCIAL";
   carrier: { name: string };
 };
 
@@ -143,7 +145,7 @@ export default function OwnerPropertyPage() {
   return (
     <div>
       <PageTitle
-        kicker={PERIL_LABEL[data.peril]}
+        kicker={`${PERIL_LABEL[data.peril]} · ${data.propertyType === "COMMERCIAL" ? "Commercial" : "Residential"}`}
         title={`${data.address}, ${data.city}`}
         body={`${data.state} ${data.zip} · lender ${data.mortgage?.lenderName ?? "none"}`}
       />
@@ -185,7 +187,10 @@ export default function OwnerPropertyPage() {
           </div>
           {listing.status === "AWAITING_OWNER_FUNDS" ? (
             <form onSubmit={fundOwner} className="mt-6 flex max-w-sm flex-col gap-3">
-              <Field label={`Owner contribution (minimum ${usd(minOwner * 100)} to go live)`}>
+              <Field
+                label={`Owner contribution (minimum ${usd(minOwner * 100)} to go live)`}
+                hint="You're not capped at the minimum — contribute more now if you'd like a larger share of any future payout."
+              >
                 <input
                   name="amount"
                   type="number"
@@ -237,7 +242,8 @@ export default function OwnerPropertyPage() {
                 >
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.14em] text-sand">
-                      {product.carrier.name}
+                      {product.carrier.name} ·{" "}
+                      {product.propertyType === "COMMERCIAL" ? "Commercial" : "Residential"}
                     </p>
                     <h3 className="mt-1 font-serif text-xl">{product.name}</h3>
                     <p className="mt-2 max-w-lg text-sm text-muted">{product.triggerDescription}</p>

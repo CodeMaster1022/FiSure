@@ -38,6 +38,35 @@ export function minimumPayableCents(
   return Math.min(...values);
 }
 
+/**
+ * The smallest stated coverage that clears the 35% buffer once the product's
+ * payout schedule is applied — i.e. the number a carrier should actually type
+ * into "Coverage (USD)", since the raw 135%-of-mortgage figure only clears
+ * the buffer when every band pays out 100%.
+ */
+export function suggestedMinimumCoverageCents(
+  mortgageCents: number,
+  payoutSchedule: unknown,
+): { coverageCents: number; achievable: boolean } {
+  const required = requiredCoverageCents(mortgageCents);
+  if (!payoutSchedule || typeof payoutSchedule !== "object") {
+    return { coverageCents: required, achievable: true };
+  }
+  const record = payoutSchedule as { bands?: Array<{ pct?: number; cents?: number }> };
+  const bands = record.bands;
+  if (!bands?.length) return { coverageCents: required, achievable: true };
+
+  let coverageCents = required;
+  for (const band of bands) {
+    if (typeof band.cents === "number") {
+      if (band.cents < required) return { coverageCents: required, achievable: false };
+    } else if (typeof band.pct === "number" && band.pct > 0) {
+      coverageCents = Math.max(coverageCents, Math.ceil((required * 100) / band.pct));
+    }
+  }
+  return { coverageCents, achievable: true };
+}
+
 export function platformFeeBps(premiumCents: number) {
   if (premiumCents <= 100_000) return 2000;
   if (premiumCents < 800_000) return 1500;
@@ -73,4 +102,31 @@ export function waterfall(params: {
   const ownerCents = Math.round((netCents * params.ownerContributionBps) / 10_000);
   const funderPoolCents = netCents - ownerCents;
   return { lenderCents, netCents, ownerCents, funderPoolCents };
+}
+
+/**
+ * Illustrative-only preview for a contributor deciding how much to put in:
+ * their share of the total premium, and what they'd get back if the policy's
+ * full stated coverage pays out, assuming the listing reaches full funding as
+ * currently structured. Not a guarantee — real payouts depend on the actual
+ * claim size and the final mix of contributors once funding completes.
+ */
+export function estimatedContributorPayout(params: {
+  contributionCents: number;
+  premiumTargetCents: number;
+  ownerContributionCents: number;
+  coverageCents: number;
+  mortgageCents: number;
+}) {
+  const { contributionCents, premiumTargetCents, ownerContributionCents, coverageCents, mortgageCents } =
+    params;
+  const sharePct = premiumTargetCents > 0 ? (contributionCents / premiumTargetCents) * 100 : 0;
+  const ownerBps = bps(ownerContributionCents, premiumTargetCents);
+  const split = waterfall({ grossCents: coverageCents, mortgageCents, ownerContributionBps: ownerBps });
+  const assumedFunderTotalCents = Math.max(premiumTargetCents - ownerContributionCents, 0);
+  const estimatedPayoutCents =
+    assumedFunderTotalCents > 0
+      ? Math.round((split.funderPoolCents * contributionCents) / assumedFunderTotalCents)
+      : 0;
+  return { sharePct, estimatedPayoutCents };
 }

@@ -31,6 +31,7 @@ export type Listing = {
     lat: number;
     lng: number;
     peril: string;
+    propertyType: "RESIDENTIAL" | "COMMERCIAL";
     estimatedValueCents: number;
     ownerId: string;
     owner?: { id: string; name: string | null; email: string };
@@ -55,11 +56,18 @@ export type Listing = {
     user?: { email: string; name: string | null };
   }>;
   policy?: { id: string; policyNumber: string } | null;
+  ledger?: Array<{ id: string; type: string; amountCents: number; createdAt: string }>;
 };
 
 export type Notification = {
   id: string;
-  kind: "TRIGGER_MATCH" | "CLAIM_OPENED" | "CLAIM_SETTLED" | "KYC_FAILED";
+  kind:
+    | "TRIGGER_MATCH"
+    | "CLAIM_OPENED"
+    | "CLAIM_SETTLED"
+    | "KYC_FAILED"
+    | "LISTING_FULLY_FUNDED"
+    | "POLICY_BOUND";
   title: string;
   body: string;
   listingId: string | null;
