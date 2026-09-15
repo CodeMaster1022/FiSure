@@ -90,7 +90,7 @@ export function AddressAutocomplete({
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <input
         value={query}
         onChange={(e) => onChange(e.target.value)}
@@ -99,7 +99,7 @@ export function AddressAutocomplete({
         placeholder={token ? "Start typing a street address…" : "Address autocomplete unavailable"}
         disabled={!token}
         autoComplete="off"
-        className={inputClass()}
+        className={inputClass("w-full")}
       />
       {open && !resolved && query.trim().length >= 4 && suggestions.length > 0 ? (
         <ul className="absolute z-10 mt-1 w-full border border-line bg-background shadow-lg">
