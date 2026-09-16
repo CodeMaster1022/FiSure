@@ -5,7 +5,7 @@ import { api, API_URL } from "@/lib/api";
 import { usd, suggestedMinimumCoverageCents } from "@/lib/money";
 import { PERIL_LABEL, DOCUMENT_KIND_LABEL } from "@/lib/labels";
 import { PageTitle, StatusBadge } from "@/components/app/ui";
-import { Button, Field, inputClass } from "@/components/ui/forms";
+import { Button, Field, Pagination, inputClass } from "@/components/ui/forms";
 
 type Request = {
   id: string;
@@ -34,16 +34,28 @@ export default function CarrierQueue() {
   const [requests, setRequests] = useState<Request[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   function load() {
-    api<{ requests: Request[] }>("/quotes/queue")
-      .then((data) => setRequests(data.requests))
+    api<{ requests: Request[]; total: number }>(`/quotes/queue?page=${page}&pageSize=${pageSize}`)
+      .then((data) => {
+        setRequests(data.requests);
+        setTotal(data.total);
+      })
       .catch((err: Error) => setError(err.message));
   }
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize]);
+
+  function changePageSize(size: number) {
+    setPageSize(size);
+    setPage(1);
+  }
 
   async function respond(event: FormEvent<HTMLFormElement>, id: string) {
     event.preventDefault();
@@ -161,6 +173,13 @@ export default function CarrierQueue() {
           </article>
         ))}
       </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={changePageSize}
+      />
     </div>
   );
 }

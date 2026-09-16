@@ -7,7 +7,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   const { user } = useSessionUser();
   if (!user) return null;
   return (
-    <AppShell role={user.role} email={user.email}>
+    <AppShell role={user.role} email={user.email} name={user.name}>
       {children}
     </AppShell>
   );

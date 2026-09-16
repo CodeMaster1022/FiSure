@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { PageTitle } from "@/components/app/ui";
-import { Button, Field, inputClass } from "@/components/ui/forms";
+import { Button, Field, Pagination, inputClass } from "@/components/ui/forms";
 
 type Row = {
   id: string;
@@ -27,17 +27,29 @@ export default function AdminWaitlist() {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [inviteUrls, setInviteUrls] = useState<Record<string, string>>({});
+  const [sentMessages, setSentMessages] = useState<Record<string, string>>({});
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   function load() {
-    api<{ waitlist: Row[] }>("/waitlist")
-      .then((data) => setRows(data.waitlist))
+    api<{ waitlist: Row[]; total: number }>(`/waitlist?page=${page}&pageSize=${pageSize}`)
+      .then((data) => {
+        setRows(data.waitlist);
+        setTotal(data.total);
+      })
       .catch((err: Error) => setError(err.message));
   }
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize]);
+
+  function changePageSize(size: number) {
+    setPageSize(size);
+    setPage(1);
+  }
 
   async function approve(event: FormEvent<HTMLFormElement>, row: Row) {
     event.preventDefault();
@@ -45,14 +57,14 @@ export default function AdminWaitlist() {
     const form = new FormData(event.currentTarget);
     const organizationName = String(form.get("organizationName") ?? "").trim();
     try {
-      const data = await api<{ inviteUrl: string }>(`/waitlist/${row.id}/approve`, {
+      await api(`/waitlist/${row.id}/approve`, {
         method: "POST",
         body: JSON.stringify({
           role: form.get("role"),
           ...(organizationName ? { organizationName } : {}),
         }),
       });
-      setInviteUrls((prev) => ({ ...prev, [row.id]: data.inviteUrl }));
+      setSentMessages((prev) => ({ ...prev, [row.id]: `Invite emailed to ${row.email}.` }));
       setOpenId(null);
       load();
     } catch (err) {
@@ -65,7 +77,7 @@ export default function AdminWaitlist() {
       <PageTitle
         kicker="Admin"
         title="Waitlist"
-        body="Approving a request creates a real account and a one-time invite link — copy it and send it to the person yourself (no email delivery is wired up yet)."
+        body="Approving a request creates a real account and emails a one-time invite link to the applicant automatically."
       />
       {error ? <p className="mb-4 text-sm text-sand">{error}</p> : null}
       <div className="overflow-x-auto border border-line">
@@ -118,22 +130,8 @@ export default function AdminWaitlist() {
                       Approve
                     </Button>
                   )}
-                  {inviteUrls[row.id] ? (
-                    <div className="mt-2 flex max-w-sm items-center gap-2">
-                      <input
-                        readOnly
-                        value={inviteUrls[row.id]}
-                        className={inputClass("text-xs")}
-                        onFocus={(e) => e.currentTarget.select()}
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => navigator.clipboard.writeText(inviteUrls[row.id])}
-                      >
-                        Copy
-                      </Button>
-                    </div>
+                  {sentMessages[row.id] ? (
+                    <p className="mt-2 text-xs text-teal">{sentMessages[row.id]}</p>
                   ) : null}
                 </td>
               </tr>
@@ -141,6 +139,13 @@ export default function AdminWaitlist() {
           </tbody>
         </table>
       </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={changePageSize}
+      />
     </div>
   );
 }

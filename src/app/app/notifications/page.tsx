@@ -4,24 +4,38 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { PageTitle } from "@/components/app/ui";
-import { Button } from "@/components/ui/forms";
+import { Button, Pagination } from "@/components/ui/forms";
 import { useNotificationsBadge } from "@/components/app/AppShell";
 import type { Notification } from "@/lib/types";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
   const refreshBadge = useNotificationsBadge();
 
   async function load() {
-    const data = await api<{ notifications: Notification[] }>("/notifications");
+    const data = await api<{ notifications: Notification[]; unreadCount: number; total: number }>(
+      `/notifications?page=${page}&pageSize=${pageSize}`,
+    );
     setNotifications(data.notifications);
+    setUnreadCount(data.unreadCount);
+    setTotal(data.total);
   }
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount is a sanctioned Effect use case
     load().catch((err: Error) => setError(err.message));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize]);
+
+  function changePageSize(size: number) {
+    setPageSize(size);
+    setPage(1);
+  }
 
   async function markRead(id: string) {
     try {
@@ -42,8 +56,6 @@ export default function NotificationsPage() {
       setError(err instanceof Error ? err.message : "Could not update notifications");
     }
   }
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <div>
@@ -96,6 +108,13 @@ export default function NotificationsPage() {
           ))}
         </div>
       )}
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={changePageSize}
+      />
     </div>
   );
 }

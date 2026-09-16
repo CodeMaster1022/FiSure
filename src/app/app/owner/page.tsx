@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { usd } from "@/lib/money";
 import { PERIL_LABEL } from "@/lib/labels";
 import { PageTitle, StatusBadge } from "@/components/app/ui";
+import { Pagination } from "@/components/ui/forms";
 
 type PropertyRow = {
   id: string;
@@ -22,12 +23,23 @@ type PropertyRow = {
 export default function OwnerDashboard() {
   const [properties, setProperties] = useState<PropertyRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    api<{ properties: PropertyRow[] }>("/properties")
-      .then((data) => setProperties(data.properties))
+    api<{ properties: PropertyRow[]; total: number }>(`/properties?page=${page}&pageSize=${pageSize}`)
+      .then((data) => {
+        setProperties(data.properties);
+        setTotal(data.total);
+      })
       .catch((err: Error) => setError(err.message));
-  }, []);
+  }, [page, pageSize]);
+
+  function changePageSize(size: number) {
+    setPageSize(size);
+    setPage(1);
+  }
 
   return (
     <div>
@@ -79,6 +91,13 @@ export default function OwnerDashboard() {
           <p className="bg-background px-5 py-8 text-sm text-muted">No properties yet.</p>
         ) : null}
       </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={changePageSize}
+      />
     </div>
   );
 }

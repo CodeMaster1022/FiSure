@@ -4,7 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { PERIL_LABEL } from "@/lib/labels";
 import { PageTitle, StatusBadge } from "@/components/app/ui";
-import { Button, Field, inputClass } from "@/components/ui/forms";
+import { Button, Field, Pagination, inputClass } from "@/components/ui/forms";
 import type { Listing } from "@/lib/types";
 
 type Claim = {
@@ -31,10 +31,16 @@ export default function ClaimsPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   function load() {
-    api<{ claims: Claim[] }>("/claims")
-      .then((data) => setClaims(data.claims))
+    api<{ claims: Claim[]; total: number }>(`/claims?page=${page}&pageSize=${pageSize}`)
+      .then((data) => {
+        setClaims(data.claims);
+        setTotal(data.total);
+      })
       .catch((err: Error) => setError(err.message));
     api<{ listings: Listing[] }>("/listings")
       .then((data) => setBoundListings(data.listings.filter((l) => l.policy)))
@@ -43,7 +49,13 @@ export default function ClaimsPage() {
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize]);
+
+  function changePageSize(size: number) {
+    setPageSize(size);
+    setPage(1);
+  }
 
   async function openClaim(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -142,6 +154,13 @@ export default function ClaimsPage() {
           <p className="bg-background p-5 text-sm text-muted">No claims yet.</p>
         ) : null}
       </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={changePageSize}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, API_URL } from "@/lib/api";
 import { PageTitle } from "@/components/app/ui";
+import { Pagination } from "@/components/ui/forms";
 import { DOCUMENT_KIND_LABEL } from "@/lib/labels";
 
 type Document = {
@@ -15,12 +16,23 @@ type Document = {
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    api<{ documents: Document[] }>("/documents/mine")
-      .then((data) => setDocuments(data.documents))
+    api<{ documents: Document[]; total: number }>(`/documents/mine?page=${page}&pageSize=${pageSize}`)
+      .then((data) => {
+        setDocuments(data.documents);
+        setTotal(data.total);
+      })
       .catch((err: Error) => setError(err.message));
-  }, []);
+  }, [page, pageSize]);
+
+  function changePageSize(size: number) {
+    setPageSize(size);
+    setPage(1);
+  }
 
   return (
     <div>
@@ -53,6 +65,13 @@ export default function DocumentsPage() {
           <p className="bg-background px-5 py-8 text-sm text-muted">No documents yet.</p>
         ) : null}
       </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={changePageSize}
+      />
     </div>
   );
 }

@@ -4,20 +4,32 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { usd } from "@/lib/money";
 import { PageTitle, StatusBadge } from "@/components/app/ui";
-import { Button } from "@/components/ui/forms";
+import { Button, Pagination } from "@/components/ui/forms";
 import type { Listing } from "@/lib/types";
 
 export default function AdminListings() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   function load() {
-    api<{ listings: Listing[] }>("/listings").then((data) => setListings(data.listings));
+    api<{ listings: Listing[]; total: number }>(`/listings?page=${page}&pageSize=${pageSize}`).then((data) => {
+      setListings(data.listings);
+      setTotal(data.total);
+    });
   }
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize]);
+
+  function changePageSize(size: number) {
+    setPageSize(size);
+    setPage(1);
+  }
 
   async function expire() {
     const result = await api<{ expired: number; lapsed: number }>("/admin/expire", {
@@ -49,6 +61,13 @@ export default function AdminListings() {
           </div>
         ))}
       </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={changePageSize}
+      />
     </div>
   );
 }

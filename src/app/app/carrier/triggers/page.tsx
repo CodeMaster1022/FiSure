@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { PageTitle } from "@/components/app/ui";
-import { Button, Field, inputClass } from "@/components/ui/forms";
+import { Button, Field, Pagination, inputClass } from "@/components/ui/forms";
 
 type EventRow = {
   id: string;
@@ -18,16 +18,28 @@ type EventRow = {
 export default function CarrierTriggers() {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
 
   function load() {
-    api<{ events: EventRow[] }>("/triggers")
-      .then((data) => setEvents(data.events))
+    api<{ events: EventRow[]; total: number }>(`/triggers?page=${page}&pageSize=${pageSize}`)
+      .then((data) => {
+        setEvents(data.events);
+        setTotal(data.total);
+      })
       .catch((err: Error) => setError(err.message));
   }
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize]);
+
+  function changePageSize(size: number) {
+    setPageSize(size);
+    setPage(1);
+  }
 
   async function confirm(id: string, confirmation: string) {
     await api(`/triggers/${id}/confirm`, {
@@ -118,6 +130,13 @@ export default function CarrierTriggers() {
           </article>
         ))}
       </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={changePageSize}
+      />
     </div>
   );
 }
