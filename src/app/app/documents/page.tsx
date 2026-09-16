@@ -3,25 +3,13 @@
 import { useEffect, useState } from "react";
 import { api, API_URL } from "@/lib/api";
 import { PageTitle } from "@/components/app/ui";
+import { DOCUMENT_KIND_LABEL } from "@/lib/labels";
 
 type Document = {
   id: string;
   kind: string;
   filename: string;
   createdAt: string;
-};
-
-const KIND_LABEL: Record<string, string> = {
-  DEED: "Deed",
-  MORTGAGE: "Mortgage",
-  CONDITION_REPORT: "Condition report",
-  FILE_PACK: "Carrier submission pack",
-  QUOTE: "Quote",
-  POLICY: "Policy document",
-  REMITTANCE: "Remittance instruction",
-  PAYOUT_INSTRUCTION: "Payout instruction",
-  TAX_DOCUMENT: "Tax record",
-  OTHER: "Other",
 };
 
 export default function DocumentsPage() {
@@ -54,7 +42,8 @@ export default function DocumentsPage() {
             <div>
               <p className="font-serif text-lg">{doc.filename}</p>
               <p className="mt-1 text-sm text-muted">
-                {KIND_LABEL[doc.kind] ?? doc.kind} · {new Date(doc.createdAt).toLocaleDateString()}
+                {DOCUMENT_KIND_LABEL[doc.kind] ?? doc.kind} ·{" "}
+                {new Date(doc.createdAt).toLocaleDateString()}
               </p>
             </div>
             <span className="text-sm text-muted underline">Download</span>

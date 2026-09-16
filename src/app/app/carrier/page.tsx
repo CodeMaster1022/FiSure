@@ -1,9 +1,9 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, API_URL } from "@/lib/api";
 import { usd, suggestedMinimumCoverageCents } from "@/lib/money";
-import { PERIL_LABEL } from "@/lib/labels";
+import { PERIL_LABEL, DOCUMENT_KIND_LABEL } from "@/lib/labels";
 import { PageTitle, StatusBadge } from "@/components/app/ui";
 import { Button, Field, inputClass } from "@/components/ui/forms";
 
@@ -17,10 +17,17 @@ type Request = {
     city: string;
     peril: string;
     mortgage: { outstandingBalanceCents: number; lenderName: string } | null;
-    owner: { email: string; name: string | null };
+    owner: { email: string; name: string | null; kycStatus: string };
+    documents: Array<{ id: string; kind: string; filename: string; createdAt: string }>;
   };
   carrierProduct: { name: string; triggerDescription: string; payoutSchedule: unknown };
   quote: { decision: string } | null;
+};
+
+const KYC_LABEL: Record<string, string> = {
+  PASSED: "KYC passed",
+  FAILED: "KYC failed",
+  PENDING: "KYC pending",
 };
 
 export default function CarrierQueue() {
@@ -83,6 +90,26 @@ export default function CarrierQueue() {
                   Mortgage {usd(request.property.mortgage?.outstandingBalanceCents ?? 0)} ·{" "}
                   {request.property.mortgage?.lenderName}
                 </p>
+                <p className="mt-1 text-sm text-muted">
+                  {KYC_LABEL[request.property.owner.kycStatus] ?? request.property.owner.kycStatus}
+                </p>
+                {request.property.documents.length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-3">
+                    {request.property.documents.map((doc) => (
+                      <a
+                        key={doc.id}
+                        href={`${API_URL}/documents/${doc.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-sm text-muted underline hover:text-foreground"
+                      >
+                        {DOCUMENT_KIND_LABEL[doc.kind] ?? doc.kind}
+                      </a>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-muted">No documents submitted yet.</p>
+                )}
               </div>
               <StatusBadge status={request.quote?.decision ?? request.status} />
             </div>

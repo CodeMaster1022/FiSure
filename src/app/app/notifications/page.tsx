@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { PageTitle } from "@/components/app/ui";
 import { Button } from "@/components/ui/forms";
+import { useNotificationsBadge } from "@/components/app/AppShell";
 import type { Notification } from "@/lib/types";
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const refreshBadge = useNotificationsBadge();
 
   async function load() {
     const data = await api<{ notifications: Notification[] }>("/notifications");
@@ -25,6 +27,7 @@ export default function NotificationsPage() {
     try {
       await api(`/notifications/${id}/read`, { method: "POST" });
       await load();
+      refreshBadge();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update notification");
     }
@@ -34,6 +37,7 @@ export default function NotificationsPage() {
     try {
       await api("/notifications/read-all", { method: "POST" });
       await load();
+      refreshBadge();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update notifications");
     }
@@ -63,8 +67,9 @@ export default function NotificationsPage() {
           {notifications.map((n) => (
             <div
               key={n.id}
+              onClick={n.read ? undefined : () => markRead(n.id)}
               className={`flex flex-wrap items-start justify-between gap-4 px-5 py-4 ${
-                n.read ? "bg-background" : "bg-surface"
+                n.read ? "bg-background" : "bg-surface cursor-pointer"
               }`}
             >
               <div>
@@ -76,22 +81,17 @@ export default function NotificationsPage() {
                     <>
                       {" "}
                       ·{" "}
-                      <Link href={`/app/funder/listings/${n.listingId}`} className="underline">
+                      <Link
+                        href={`/app/funder/listings/${n.listingId}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="underline"
+                      >
                         View listing
                       </Link>
                     </>
                   ) : null}
                 </p>
               </div>
-              {!n.read ? (
-                <button
-                  type="button"
-                  onClick={() => markRead(n.id)}
-                  className="text-sm text-muted hover:text-foreground"
-                >
-                  Mark read
-                </button>
-              ) : null}
             </div>
           ))}
         </div>

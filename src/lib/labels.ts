@@ -24,6 +24,19 @@ export const STATUS_LABEL: Record<string, string> = {
   ARCHIVED: "Archived",
 };
 
+export const DOCUMENT_KIND_LABEL: Record<string, string> = {
+  DEED: "Deed",
+  MORTGAGE: "Mortgage",
+  CONDITION_REPORT: "Condition report",
+  FILE_PACK: "Carrier submission pack",
+  QUOTE: "Quote",
+  POLICY: "Policy document",
+  REMITTANCE: "Remittance instruction",
+  PAYOUT_INSTRUCTION: "Payout instruction",
+  TAX_DOCUMENT: "Tax record",
+  OTHER: "Other",
+};
+
 export function radiusKmForPeril(peril: string) {
   switch (peril) {
     case "FL_HURRICANE":

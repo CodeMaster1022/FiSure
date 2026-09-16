@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { usd, estimatedContributorPayout } from "@/lib/money";
 import { PERIL_LABEL } from "@/lib/labels";
@@ -11,9 +11,16 @@ import type { Listing } from "@/lib/types";
 
 export default function FunderListingPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const [listing, setListing] = useState<Listing | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(
+    searchParams.get("checkout") === "success"
+      ? "Payment received — your contribution will appear below once Stripe confirms it."
+      : searchParams.get("checkout") === "cancelled"
+        ? "Checkout was cancelled. No charge was made."
+        : null,
+  );
   const [amount, setAmount] = useState<string>("");
   const defaultAmountSet = useRef(false);
 
@@ -38,10 +45,18 @@ export default function FunderListingPage() {
   async function contribute(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
-      await api(`/listings/${params.id}/contribute`, {
+      const data = await api<{ checkoutUrl?: string }>(`/listings/${params.id}/contribute`, {
         method: "POST",
-        body: JSON.stringify({ amount: Number(amount), asOwner: false }),
+        body: JSON.stringify({
+          amount: Number(amount),
+          asOwner: false,
+          returnUrl: window.location.href,
+        }),
       });
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
       setMessage("Simulated contribution recorded. This is not an investment.");
       await load();
     } catch (err) {

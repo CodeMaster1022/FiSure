@@ -67,7 +67,8 @@ export type Notification = {
     | "CLAIM_SETTLED"
     | "KYC_FAILED"
     | "LISTING_FULLY_FUNDED"
-    | "POLICY_BOUND";
+    | "POLICY_BOUND"
+    | "QUOTE_REQUEST_RECEIVED";
   title: string;
   body: string;
   listingId: string | null;

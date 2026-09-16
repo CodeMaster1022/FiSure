@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { usd } from "@/lib/money";
 import { PERIL_LABEL } from "@/lib/labels";
@@ -48,10 +48,17 @@ type Product = {
 
 export default function OwnerPropertyPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<Detail["property"] | null>(null);
   const [products, setProducts] = useState<Product[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(
+    searchParams.get("checkout") === "success"
+      ? "Payment received — this will appear as funded once Stripe confirms it."
+      : searchParams.get("checkout") === "cancelled"
+        ? "Checkout was cancelled. No charge was made."
+        : null,
+  );
   const [requesting, setRequesting] = useState(false);
 
   async function load() {
@@ -104,13 +111,18 @@ export default function OwnerPropertyPage() {
     if (!listing) return;
     const form = new FormData(event.currentTarget);
     try {
-      await api(`/listings/${listing.id}/contribute`, {
+      const res = await api<{ checkoutUrl?: string }>(`/listings/${listing.id}/contribute`, {
         method: "POST",
         body: JSON.stringify({
           amount: Number(form.get("amount")),
           asOwner: true,
+          returnUrl: window.location.href,
         }),
       });
+      if (res.checkoutUrl) {
+        window.location.href = res.checkoutUrl;
+        return;
+      }
       setMessage("Simulated collection recorded.");
       await load();
     } catch (err) {
