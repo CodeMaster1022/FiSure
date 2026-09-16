@@ -27,7 +27,9 @@ export default function AdminWaitlist() {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [sentMessages, setSentMessages] = useState<Record<string, string>>({});
+  const [sentMessages, setSentMessages] = useState<
+    Record<string, { text: string; ok: boolean; inviteUrl?: string }>
+  >({});
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [total, setTotal] = useState(0);
@@ -57,14 +59,23 @@ export default function AdminWaitlist() {
     const form = new FormData(event.currentTarget);
     const organizationName = String(form.get("organizationName") ?? "").trim();
     try {
-      await api(`/waitlist/${row.id}/approve`, {
+      const data = await api<{ emailSent: boolean; inviteUrl: string }>(`/waitlist/${row.id}/approve`, {
         method: "POST",
         body: JSON.stringify({
           role: form.get("role"),
           ...(organizationName ? { organizationName } : {}),
         }),
       });
-      setSentMessages((prev) => ({ ...prev, [row.id]: `Invite emailed to ${row.email}.` }));
+      setSentMessages((prev) => ({
+        ...prev,
+        [row.id]: data.emailSent
+          ? { text: `Invite emailed to ${row.email}.`, ok: true }
+          : {
+              text: `Account approved, but the invite email to ${row.email} failed to send — copy the link below and send it yourself.`,
+              ok: false,
+              inviteUrl: data.inviteUrl,
+            },
+      }));
       setOpenId(null);
       load();
     } catch (err) {
@@ -131,7 +142,28 @@ export default function AdminWaitlist() {
                     </Button>
                   )}
                   {sentMessages[row.id] ? (
-                    <p className="mt-2 text-xs text-teal">{sentMessages[row.id]}</p>
+                    <div className="mt-2">
+                      <p className={`text-xs ${sentMessages[row.id].ok ? "text-teal" : "text-sand"}`}>
+                        {sentMessages[row.id].text}
+                      </p>
+                      {sentMessages[row.id].inviteUrl ? (
+                        <div className="mt-2 flex max-w-sm items-center gap-2">
+                          <input
+                            readOnly
+                            value={sentMessages[row.id].inviteUrl}
+                            className={inputClass("text-xs")}
+                            onFocus={(e) => e.currentTarget.select()}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => navigator.clipboard.writeText(sentMessages[row.id].inviteUrl!)}
+                          >
+                            Copy
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
                 </td>
               </tr>
