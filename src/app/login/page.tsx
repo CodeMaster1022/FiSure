@@ -75,13 +75,6 @@ export default function LoginPage() {
           {pending ? "Signing in…" : "Sign in"}
         </button>
       </form>
-      <ul className="mt-8 space-y-1 text-xs text-muted">
-        <li>owner@fisure.local / owner2@fisure.local — property owners</li>
-        <li>funder@fisure.local — Harbor CSR</li>
-        <li>funder2@fisure.local — Pacific Resilience Fund</li>
-        <li>carrier@fisure.local — Anchor Parametric</li>
-        <li>admin@fisure.local — operator</li>
-      </ul>
     </div>
   );
 }
