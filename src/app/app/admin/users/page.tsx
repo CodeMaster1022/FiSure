@@ -15,6 +15,7 @@ type UserRow = {
   kycStatus: string;
   carrierId: string | null;
   disabledAt: string | null;
+  lastLoginAt: string | null;
   createdAt: string;
 };
 
@@ -151,6 +152,7 @@ export default function AdminUsers() {
               <th className="px-4 py-3">Role</th>
               <th className="px-4 py-3">KYC</th>
               <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3">Last login</th>
               <th className="px-4 py-3">Created</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
@@ -194,6 +196,9 @@ export default function AdminUsers() {
                     <span className={row.disabledAt ? "text-sand" : "text-muted"}>
                       {row.disabledAt ? "Disabled" : "Active"}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {row.lastLoginAt ? new Date(row.lastLoginAt).toLocaleString() : "Never"}
                   </td>
                   <td className="px-4 py-3">{new Date(row.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
